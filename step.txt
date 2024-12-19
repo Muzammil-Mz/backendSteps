@@ -1,0 +1,418 @@
+//Backend crash course: 
+
+
+
+1. SETUP (folder structure)
+///////////////
+--> create a new repo on github with your project name and make sure you check Readme.md and also add keywords and description.
+repo can be private or public
+
+
+--> Get on terminal
+--> cd
+--> git clone url
+--> cd RepoName
+--> mkdir client Server
+--> cd Server
+--> npm init -y
+    npm i express, config, mongoose, jsonwebToken, bcrypt, axios, nodemon
+
+--> mkdir controllers, models, utils, config
+
+--> cd config, touch default.json
+
+add this code inside default.json:
+
+{
+    "PORT" : 5000,
+    "DB_URL" : "your connection url with db[go to compass and click on 3 dots beside the cluster name and copy the 2nd option and paster here]"
+}
+
+cd ..
+
+touch app.js .gitignore
+
+add this below code in .gitignore
+
+node_modules
+config
+
+open your package.json and add
+
+type: "module"
+
+inside scrips, add: "start" : "nodemon app.js"  (npm i -g nodemon)
+
+now, come back to your app.js .
+
+
+
+2. Express and Setup: 
+
+--> make sure your config has DB_URL  with a new DB_NAME like this: 
+
+
+{
+    "PORT" : 5000,
+    "DB_URL" : "your connection url with db[go to compass and click on 3 dots beside the cluster name and copy the 2nd option and paster here]"
+}
+
+
+--> come back to main folder level
+--> cd utils && touch dbConnect.js
+add this below code inside the dbConnect.js file
+
+
+import mongoose from "mongoose";
+import config from "config"
+
+
+async function dbConnect(){
+
+  try{
+    let dbUrl = config.get("DB_URL)
+    await mongoose.connect(dbUrl)
+  } catch(error){
+        log(error)
+  }
+
+}
+
+dbConnect()
+
+--> now come back to app.js and add this below code: 
+
+
+import express from "express"
+import config from "config"
+
+import "./utils/dbConnect.js";
+
+const app = express()
+const PORT = config.get("PORT");
+
+app.use(express.json());
+
+//make a get api with simple hello world message
+
+app.get("/api", (req, res)=>{
+
+  try{
+    res.status(200).json({msg: "hello world"})
+  } catch (error){
+    console.log(error)
+  }
+
+});
+
+app.listen(PORT, ()=> {
+    console.log("YOUR SERVER IS RUNNING LIVE AT ${PORT})
+})
+
+
+now run the server using npm start
+
+make sure you see  server is running and Database connected successfully
+
+
+
+
+
+3.  Express Routing Setup
+
+--> mske sure you have controllers folder 
+--> cd controllers
+
+//create your subfolders according to your project
+e.x: users, admins, staff
+
+--> mkdir users staff admins
+
+--> in users folder in index.js, add this below code: 
+
+
+import express from "express"
+
+const router = express.Router();
+
+router.get("/getallusers", (req, res)=>{
+  try{
+     console.log("Get all users");
+     res.status(200).json({msg: "get all users"})
+
+  } catch (error){
+    console.log(error)
+    res.status(500).json({msg: error})
+  }
+})
+
+
+router.post("/register", (req, res)=>{
+  try{
+ 
+    let userData = req.body;
+    console.log(userData);
+    res.status(200).json(userData)
+
+  } catch (error){
+    console.log(error)
+    res.status(500).json({msg: error})
+  }
+});
+
+
+export default router
+
+
+
+
+
+4. Model Mongoose Setup
+
+--> make sure you have models folder
+--> cd models
+
+//create your sub folders accord to your project
+// e.x: Users, Admins, staff
+//create files inside these folders same as their name with an extension .js
+
+
+
+5. Routing Import export
+
+--> make sure your "./controllers/users/index.js" has const router = express.Roter(); and export default router
+
+--> now back to app.js  and add this below code 
+
+
+import express from "express"
+import config from "config"
+
+import "./utils/dbConnect.js";
+
+
+//import routing here
+import userRouter from "./controllers/users/index.js
+import adminRouter from "./controllers/users/index.js
+import staffRouter from "./controllers/users/index.js
+
+const app = express()
+const PORT = config.get("PORT");
+
+app.use(express.json());
+
+//make a get api with simple hello world message
+
+app.get("/api", (req, res)=>{
+
+  try{
+    res.status(200).json({msg: "hello world"})
+  } catch (error){
+    console.log(error)
+  }
+
+});
+
+app.use("/api/users", userRouter)
+app.use("/api/admins", adminRouter)
+app.use("/api/staff", staffRouter)
+
+app.listen(PORT, ()=> {
+    console.log("YOUR SERVER IS RUNNING LIVE AT ${PORT})
+});
+
+
+
+
+6. MONGOOSE MODEL SETUP : 
+
+--> make sure you have model folder and with subfolders e.x: Admin Users Staffs
+
+--> Then each folder should have same filename with their foldername
+e.x: Admin/Admin.js  and Users/Users.js 
+
+--> in users.js add this below code
+
+import mongoose from "mongoose";
+
+
+const userSchema = new mongoose.Schema({
+
+ firstname: {
+  type: String,
+  require: true,
+ },
+ lastname: {
+    type: String,
+  require: true,
+ },
+ enail: {
+  type: String,
+  require: true,
+  unique: true
+ },
+ age: {
+  type: Number,
+  require: true
+ }
+})
+
+//it accepts 3 params mongoose.model("customName", schemaVariableName, "collection name");
+const userModel = mongoose.model("Users", userSchema, "users");
+
+export default userModel;
+
+
+
+7.Connecting model in API'S and testing in Postman
+
+--> make sure you have model schema setup with export of userModel 
+e.x: export default userModel
+
+--> now come back to controllers folders in users in index.js
+
+3. controllers/users/index.js add this below code :
+
+import express from "express"
+import userModel from "../../models/Users/Users.js"
+
+const router = express.Router();
+
+
+GET ALL API 
+
+/*
+API METHOD: Get
+ROUTE: "/getall"
+API NAME: Get all users
+router.get("/getall", async (req, res)=>{
+  try{
+
+    let allUsers = await userModel.find({});
+    res.status(200).json({allUsers})
+
+  }catch(error){
+    log(error)
+    res.status(500).json({msg: error})
+  }
+})
+
+
+get ONE API 
+
+/*
+API METHOD: Get
+ROUTE: "/get"
+API NAME: Get one user
+router.get("/getone", async (req, res)=>{
+  try{
+
+    let User = await userModel.find({firstname: "Abdul"});
+    res.status(200).json({oneUser})
+
+  }catch(error){
+    log(error)
+    res.status(500).json({msg: error})
+  }
+})
+
+
+*/
+
+
+
+/* 
+API METHOD: Post
+ROUTE: /add
+API NAME: addingusers
+
+*/
+
+router.post("/add", async (req, res)=>{
+  try{
+
+    let userData = req.body;
+    log(userData)
+    await userModel.create(userData)
+    res.status(201).send("user added✅")
+
+  }catch(error){
+    log(error)
+    res.status(500).json({msg: error})
+  }
+})
+
+
+*/
+
+
+
+/* 
+API METHOD: Put
+ROUTE: /update/:email
+ROUTE: /update
+API NAME: update users
+
+*/
+
+router.put("/update/:email", (req, res)=>{
+  try{
+    let userEmail = req.params.email;
+    log(userEmail)
+    await userModel.findOneAndUpdate({email: userEmail}, {$set: userData}, {new: true});
+    res.status(200).json({msg: user updated successfully})
+  } catch(error){
+    log(error)
+    res.status(500).json({msg: error})
+  }
+})
+
+*/
+
+
+/*
+API METHOD: DELETE
+ROUTE: /delete/:email (this is req.params.email)
+API NAME: delete users
+*/
+
+
+
+router.delete("/delete/:email", async (req, res)=>{
+  try{
+
+    let userEmail = req.params.email;
+    log(userEmail);
+    await userModel.deletOne({email: userEmail});
+
+    res.status(200).json({msg: "User deleted successfully"})
+  } catch(error){
+
+    log(error)
+    res.status(500).json({msg: error})
+  }
+})
+
+*/
+
+
+/*
+API METHOD: DELETE
+ROUTE: /delete/
+API NAME: delete all users
+this api will delete all user collection
+
+*/
+
+router.delete("/deleteall", async(req, res)=>{
+  try{
+    //await userModel.deleteMany({})  it deletes all documents of a collection
+
+    (or)
+
+    //await userModel.deleteMany({firstname: "syed})  it deletes all docs which have first name as "syed"
+  } catch(error){
+    log(error)
+    res.status(500).json({msg: error})
+  }
+})
